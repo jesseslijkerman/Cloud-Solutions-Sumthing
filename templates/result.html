@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>File Upload</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        body {
+            background-color: #333;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        h1 {
+            background-color: #222;
+            color: #fff;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        form {
+            background-color: #444;
+            padding: 20px;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 600px;
+        }
+
+        input[type="file"] {
+            background-color: #666;
+            color: #fff;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+
+        input[type="submit"] {
+            background-color: #045b1f;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        /* Aanvullende stijlen voor resultaten */
+        .result-container {
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        .result-container img {
+            max-width: 400px;
+            max-height: 400px;
+            cursor: pointer; /* Maakt de afbeelding klikbaar */
+        }
+
+        .result-container p {
+            margin-top: 10px;
+        }
+
+        /* Stijl voor de lichtbox-overlay */
+        .lightbox-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1;
+        }
+
+        /* Stijl voor de lichtbox-container */
+        .lightbox-container {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2;
+        }
+
+        .lightbox-image {
+            max-width: 80%;
+            max-height: 80%;
+            border: 3px solid #fff;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <h1>File Upload</h1>
+    <form method="POST" action="" enctype="multipart/form-data">
+        <p><input type="file" name="file"></p>
+        <p><input type="submit" value="Submit"></p>
+    </form>
+
+    <!-- Resultaatcontainer voor weergeven van afbeelding en tekst -->
+    <div class="result-container" id="result" style="display: none;">
+        <h2>Uploaded Image:</h2>
+        <img class="lightbox-trigger" id="uploaded-image" alt="Uploaded Image">
+        <h2>Extracted Text:</h2>
+        <p id="extracted-text"></p>
+    </div>
+
+    <!-- Overlay en lichtbox-container -->
+    <div class="lightbox-overlay" id="lightboxOverlay"></div>
+    <div class="lightbox-container" id="lightboxContainer">
+        <img class="lightbox-image" id="lightboxImage">
+    </div>
+
+    <script>
+        // JavaScript voor het weergeven van resultaten en lichtbox
+        const resultDiv = document.getElementById('result');
+        const uploadedImage = document.getElementById('uploaded-image');
+        const extractedText = document.getElementById('extracted-text');
+        const lightboxOverlay = document.getElementById("lightboxOverlay");
+        const lightboxContainer = document.getElementById("lightboxContainer");
+        const lightboxImage = document.getElementById("lightboxImage");
+        const lightboxTriggers = document.querySelectorAll(".lightbox-trigger");
+
+        // Controleer of er resultaatgegevens zijn in de queryparameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const imageURL = urlParams.get('image_url');
+        const text = urlParams.get('extracted_text');
+
+        if (imageURL && text) {
+            // Toon de geüploade afbeelding en de geëxtraheerde tekst
+            resultDiv.style.display = 'block';
+            uploadedImage.src = `{{ url_for('static', filename='uploads/') }}${imageURL}`;
+            extractedText.innerText = text;
+        }
+
+        // Klikgebeurtenis voor lichtbox
+        lightboxTriggers.forEach((trigger) => {
+            trigger.addEventListener("click", (event) => {
+                lightboxImage.src = event.target.src;
+                lightboxOverlay.style.display = "block";
+                lightboxContainer.style.display = "block";
+            });
+        });
+
+        lightboxOverlay.addEventListener("click", () => {
+            lightboxOverlay.style.display = "none";
+            lightboxContainer.style.display = "none";
+        });
+    </script>
+</body>
+</html>

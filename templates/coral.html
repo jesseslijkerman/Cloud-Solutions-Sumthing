@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="static/assets/styles.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            background-color: #f1f0d9;
+        }
+
+        header {
+            background-color: #078a7a;
+            color: #fff;
+            padding: 15px;
+            text-align: right;
+            position: relative;
+        }
+
+        /* Voeg het gele lijnelement toe onder de navbar */
+        header:after {
+            content: '';
+            display: block;
+            height: 2px;
+            background-color: #c7f50a;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+        }
+
+        .nav-links {
+            list-style: none;
+            display: flex;
+            align-items: center;
+        }
+
+        .nav-links li {
+            margin-left: 20px;
+        }
+
+        /* Nieuwe stijl voor de rechterkant van de navbar */
+        .nav-links .nav-right {
+            margin-left: auto; /* Duwt elementen naar rechts */
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #c7f50a;
+            font-size: 28px;
+            font-weight: bold;
+            position: relative;
+            padding: 10px 15px;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:after {
+            content: '';
+            display: block;
+            height: 2px;
+            background-color: #c7f50a;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: #c7f50a;
+        }
+
+        .nav-links a:hover:after {
+            transform: scaleX(1);
+        }
+
+        h1 {
+            background-color: #222;
+            color: #fff;
+            padding: 10px;
+            border-radius: 10px;
+        }
+
+        form {
+            background-color: #078a7a;
+            padding: 30px;
+            border-radius: 10px;
+            margin: 20px auto;
+            width: 80%;
+            max-width: 600px;
+        }
+
+        input[type="file"] {
+        background-color: #666;
+        color: #fff;
+        padding: 10px;
+        border: none;
+        border-radius: 5px;
+        margin: 10px auto; /* Center the file input */
+        display: block; /* Make the file input a block element to center the text below it */
+        }
+
+        input[type="submit"] {
+        background-color: #045b1f;
+        color: #fff;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        width: 100%; /* Make the submit button full width */
+        box-sizing: border-box; /* Include padding and border in the element's total width and height */
+        }
+
+        .category-header {
+            font-size: 24px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+
+        .image-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            margin: 10px;
+        }
+
+        .image-container img {
+            margin: 10px;
+            max-width: 50%; /* Adjust the width as needed */
+            max-height: auto;
+            transition: transform 0.3s ease;
+            cursor: pointer;
+        }
+
+        .lightbox-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1;
+        }
+
+        .lightbox-container {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2;
+        }
+
+        .lightbox-image {
+            max-width: 80%;
+            max-height: 80%;
+            border: 3px solid #fff;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        body.coral-page .image-container img {
+            max-width: 50%; /* Adjust the width as needed */
+            max-height: auto;
+        }
+    </style>
+    <title>Coral Model</title>
+</head>
+<body>
+
+    <header>
+        <nav>
+            <ul class="nav-links">
+                <li class="nav-right"><a href="/" id="home">HOME</a></li>
+                <li><a href="coral.html" id="coral">CORAL</a></li>
+                <li><a href="vision.html" id="vision">VISION API</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <form method="POST" enctype="multipart/form-data" action="{{ url_for('upload_and_run_inference') }}">
+        <input type="file" name="files" multiple>
+        <input type="submit" value="Upload and Run Inference">
+    </form>
+
+    {% if original_images or result_images %}
+        <div class="image-container">
+            {% for original_image in original_images %}
+            <img class="lightbox-trigger coral-image" src="{{ url_for('static', filename='uploads/' ~ original_image) }}" alt="Original" width="300" height="200">
+            {% endfor %}
+        </div>
+
+        <div class="image-container">
+            {% for result_image in result_images %}
+            <img class="lightbox-trigger coral-image" src="{{ url_for('static', filename='results/' ~ result_image) }}" alt="Result" width="300" height="200">
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Overlay and lightbox-container -->
+    <div class="lightbox-overlay" id="lightboxOverlay"></div>
+    <div class="lightbox-container" id="lightboxContainer">
+        <img class="lightbox-image" id="lightboxImage">
+    </div>
+
+    <script>
+        // JavaScript for the lightbox
+        const lightboxOverlay = document.getElementById("lightboxOverlay");
+        const lightboxContainer = document.getElementById("lightboxContainer");
+        const lightboxImage = document.getElementById("lightboxImage");
+        const lightboxTriggers = document.querySelectorAll(".lightbox-trigger");
+
+        lightboxTriggers.forEach((trigger) => {
+            trigger.addEventListener("click", (event) => {
+                lightboxImage.src = event.target.src;
+                lightboxOverlay.style.display = "block";
+                lightboxContainer.style.display = "block";
+            });
+        });
+
+        lightboxOverlay.addEventListener("click", () => {
+            lightboxOverlay.style.display = "none";
+            lightboxContainer.style.display = "none";
+        });
+    </script>
+</body>
+</html>

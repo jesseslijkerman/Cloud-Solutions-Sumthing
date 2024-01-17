@@ -1,0 +1,70 @@
+image: google/cloud-sdk:latest
+
+stages:          # List of stages for jobs, and their order of execution
+  - build
+  - deploy
+
+variables:
+  # Define your variables here
+  PROJECT_ID: "hbo-ict-docenten"
+  SERVICE_ACCOUNT_KEY_FILE: "$GOOGLE_APPLICATION_CREDENTIALS"
+  REGION: "europe-west4"
+  ARTIFACT_REGISTRY_HOST: "europe-west4-docker.pkg.dev" 
+  REPOSITORY_NAME: "sumthing"
+  FRONTEND_IMAGE_NAME: "coral-detector"
+  BACKEND_IMAGE_NAME: "backend"
+  TAG: "latest"    
+
+buildFrontend:
+  stage: build
+  script:
+    - echo "$SERVICE_ACCOUNT_KEY_FILE" > $CI_PROJECT_DIR/key.json
+    - gcloud auth activate-service-account --key-file=$CI_PROJECT_DIR/key.json
+    - gcloud config set project $PROJECT_ID
+    - gcloud builds submit --tag $ARTIFACT_REGISTRY_HOST/$PROJECT_ID/$REPOSITORY_NAME/$FRONTEND_IMAGE_NAME:$TAG
+  tags:
+    - hva
+  only:
+    - main  
+
+buildBackend:
+  stage: build
+  script:
+    - cd backend
+    - echo "$SERVICE_ACCOUNT_KEY_FILE" > $CI_PROJECT_DIR/key.json
+    - gcloud auth activate-service-account --key-file=$CI_PROJECT_DIR/key.json
+    - gcloud config set project $PROJECT_ID
+    - gcloud builds submit --tag $ARTIFACT_REGISTRY_HOST/$PROJECT_ID/$REPOSITORY_NAME/$BACKEND_IMAGE_NAME:$TAG
+  tags:
+    - hva
+  only:
+    - main            
+
+deployFrontend:
+  needs: 
+    - buildFrontend
+  stage: deploy
+  script:
+    - echo "$SERVICE_ACCOUNT_KEY_FILE" > $CI_PROJECT_DIR/key.json
+    - gcloud auth activate-service-account --key-file=$CI_PROJECT_DIR/key.json
+    - gcloud config set project $PROJECT_ID
+    - gcloud run deploy $FRONTEND_IMAGE_NAME --image $ARTIFACT_REGISTRY_HOST/$PROJECT_ID/$REPOSITORY_NAME/$FRONTEND_IMAGE_NAME:$TAG --platform managed --region $REGION --allow-unauthenticated --quiet --add-cloudsql-instances=hbo-ict-docenten:europe-west4:sumthing
+  tags:
+    - hva
+  only:
+    - main     
+
+deployBackend:
+  needs: 
+    - buildBackend
+  stage: deploy
+  script:
+    - cd backend
+    - echo "$SERVICE_ACCOUNT_KEY_FILE" > $CI_PROJECT_DIR/key.json
+    - gcloud auth activate-service-account --key-file=$CI_PROJECT_DIR/key.json
+    - gcloud config set project $PROJECT_ID
+    - gcloud run deploy $BACKEND_IMAGE_NAME --image $ARTIFACT_REGISTRY_HOST/$PROJECT_ID/$REPOSITORY_NAME/$BACKEND_IMAGE_NAME:$TAG --platform managed --region $REGION --allow-unauthenticated --quiet
+  tags:
+    - hva
+  only:
+    - main 

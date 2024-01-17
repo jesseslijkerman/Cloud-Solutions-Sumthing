@@ -1,0 +1,5 @@
+unzipped_content
+static
+venv/
+__pycache__/
+key*
